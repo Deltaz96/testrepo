@@ -5,7 +5,7 @@ const RELAY_PORT_OUT = 9001;
 
 const relay = dgram.createSocket('udp4');
 
-const registeredReceivers = new Map(); // ip -> { port, lastSeen }
+const registeredReceivers = new Map();
 
 relay.on('message', (msg, rinfo) => {
   const text = msg.toString().trim();

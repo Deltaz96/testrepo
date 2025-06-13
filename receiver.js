@@ -1,7 +1,7 @@
 import dgram from 'node:dgram';
 import os from 'os';
 
-const RELAY_IP = '192.168.2.42';
+const RELAY_IP = '10.0.1.1';
 const RELAY_PORT = 9000;
 const RECEIVE_PORT = 9001;
 const MY_NAME = os.hostname();
@@ -16,7 +16,6 @@ function register() {
   });
 }
 
-// Handle incoming messages
 socket.on('message', (msg, rinfo) => {
   console.log(`📥 Received from relay: "${msg.toString()}"`);
 });
