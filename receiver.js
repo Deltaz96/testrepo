@@ -1,18 +1,27 @@
-// sender.js
-
 import dgram from 'node:dgram';
+import os from 'os';
 
-const RELAY_IP = '10.0.1.2'; // 🔁 Replace with actual relay IP
-const RELAY_PORT = 9999;
+const RELAY_IP = '192.168.2.42';
+const RELAY_PORT = 9000;
+const RECEIVE_PORT = 9001;
+const MY_NAME = os.hostname();
 
 const socket = dgram.createSocket('udp4');
-const message = 'MESSAGE Hello to all registered receivers! 🚀';
 
-socket.send(message, 0, message.length, RELAY_PORT, RELAY_IP, (err) => {
-  if (err) {
-    console.error('❌ Failed to send message:', err);
-  } else {
-    console.log('✅ Message sent to relay');
-  }
-  socket.close();
+function register() {
+  const msg = Buffer.from(`REGISTER ${RECEIVE_PORT}`);
+  socket.send(msg, 0, msg.length, RELAY_PORT, RELAY_IP, (err) => {
+    if (err) console.error('❌ Registration failed:', err);
+    else console.log(`✅ Registered with relay ${RELAY_IP}:${RELAY_PORT}`);
+  });
+}
+
+// Handle incoming messages
+socket.on('message', (msg, rinfo) => {
+  console.log(`📥 Received from relay: "${msg.toString()}"`);
+});
+
+socket.bind(RECEIVE_PORT, () => {
+  console.log(`👂 Listening on ${RECEIVE_PORT}`);
+  register();
 });
