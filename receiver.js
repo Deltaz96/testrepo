@@ -11,9 +11,9 @@ let hasRegistered = false;
 let heartbeatTimer = null;
 
 function register() {
-  const msg = Buffer.from(`REGISTER ${RECEIVE_PORT}`);
+  const msg = Buffer.from(`REGISTER ${RECEIVE_PORT} ${MY_NAME}`);
   socket.send(msg, 0, msg.length, RELAY_PORT, RELAY_IP, (err) => {
-    if (err) console.error('❌ REGISTER send error:', err);
+    if (err) console.error('❌ Error sending REGISTER:', err);
     else console.log('📤 Sent REGISTER to relay, awaiting ACK...');
   });
 
@@ -28,10 +28,10 @@ function register() {
 function startHeartbeat() {
   if (heartbeatTimer) clearInterval(heartbeatTimer);
   heartbeatTimer = setInterval(() => {
-    console.log('🔁 Refreshing registration with relay...');
+    console.log('🔁 Refreshing registration...');
     hasRegistered = false;
     register();
-  }, 1 * 10 * 1000);
+  }, 60 * 1000);
 }
 
 socket.on('message', (msg, rinfo) => {
