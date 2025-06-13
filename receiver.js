@@ -1,26 +1,14 @@
-// receiver.js
-
 import dgram from 'node:dgram';
 import os from 'os';
 
-const RELAY_IP = '10.0.1.1';     // Relay IP
-const RELAY_PORT = 9000;        // Relay's input port
-const RECEIVE_PORT = 9001;      // Your fixed listen port
+const RELAY_IP = '10.0.1.1';
+const RELAY_PORT = 9000;
+const RECEIVE_PORT = 9001;
 const MY_NAME = os.hostname();
 
-const socket = dgram.createSocket('udp4'); // 👈 One socket does it all
+const socket = dgram.createSocket('udp4');
 let hasRegistered = false;
-
-socket.on('message', (msg, rinfo) => {
-  const text = msg.toString();
-
-  if (text.startsWith('ACK')) {
-    hasRegistered = true;
-    console.log(`✅ Registered with relay ${RELAY_IP}:${RELAY_PORT}`);
-  } else {
-    console.log(`📥 From relay: "${text}"`);
-  }
-});
+let heartbeatTimer = null;
 
 function register() {
   const msg = Buffer.from(`REGISTER ${RECEIVE_PORT}`);
@@ -36,6 +24,28 @@ function register() {
     }
   }, 2000);
 }
+
+function startHeartbeat() {
+  if (heartbeatTimer) clearInterval(heartbeatTimer);
+  heartbeatTimer = setInterval(() => {
+    console.log('🔁 Refreshing registration with relay...');
+    hasRegistered = false;
+    register();
+  }, 1 * 10 * 1000);
+}
+
+socket.on('message', (msg, rinfo) => {
+  const text = msg.toString();
+  if (text.startsWith('ACK')) {
+    if (!hasRegistered) {
+      console.log(`✅ Registered with relay ${RELAY_IP}:${RELAY_PORT}`);
+      startHeartbeat();
+    }
+    hasRegistered = true;
+  } else {
+    console.log(`📥 From relay: "${text}"`);
+  }
+});
 
 socket.bind(RECEIVE_PORT, () => {
   console.log(`👂 Listening on ${RECEIVE_PORT} for messages`);

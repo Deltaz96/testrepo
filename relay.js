@@ -1,13 +1,10 @@
-// relay.js
-
 import dgram from 'node:dgram';
 
-const RELAY_PORT_IN = 9000;     // Receives REGISTERs + messages
-const RELAY_PORT_OUT = 9001;    // Port where receivers are expected to be listening
+const RELAY_PORT_IN = 9000;
+const RELAY_PORT_OUT = 9001;
 
 const relay = dgram.createSocket('udp4');
 
-// Map of receivers: { [ip]: { port, lastSeen } }
 const registeredReceivers = new Map();
 
 function logPeers() {
@@ -45,15 +42,13 @@ relay.on('message', (msg, rinfo) => {
     return;
   }
 
-  // Forward message to all registered receivers
   const message = Buffer.from(text);
   console.log(`📥 Message from sender ${rinfo.address}:${rinfo.port}: "${text}"`);
   logPeers();
 
   const now = Date.now();
   for (const [ip, { port, lastSeen }] of registeredReceivers.entries()) {
-    // Optional: prune stale clients older than 2 minutes
-    if (now - lastSeen > 2 * 60 * 1000) {
+    if (now - lastSeen > 1 * 10 * 1000) {
       console.log(`🗑️ Removing stale receiver: ${ip}`);
       registeredReceivers.delete(ip);
       continue;
