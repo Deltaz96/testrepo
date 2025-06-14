@@ -35,18 +35,10 @@ relay.on('message', (msg, rinfo) => {
     return;
   }
 
-  // Relay data
-  const now = Date.now();
   const payload = Buffer.from(text);
   console.log(`📥 Message from sender ${rinfo.address}:${rinfo.port}: "${text}"`);
 
-  for (const [ip, { port, name, lastSeen }] of registeredReceivers.entries()) {
-    if (now - lastSeen > 2 * 60 * 1000) {
-      console.log(`🗑️ Pruning ${name} @ ${ip}`);
-      registeredReceivers.delete(ip);
-      continue;
-    }
-
+  for (const [ip, {name}] of registeredReceivers.entries()) {
     relay.send(payload, 0, payload.length, RELAY_PORT_OUT, ip, (err) => {
       if (err) console.error(`❌ Send error to ${ip}:${RELAY_PORT_OUT}`, err);
       else console.log(`📤 Relayed to ${name} @ ${ip}:${RELAY_PORT_OUT}`);

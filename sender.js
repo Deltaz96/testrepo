@@ -1,6 +1,6 @@
 import dgram from 'node:dgram';
 
-const RELAY_IP = '10.0.1.1';
+const RELAY_IP = '192.168.2.100';
 const RELAY_PORT = 9000;
 
 const socket = dgram.createSocket('udp4');
