@@ -13,13 +13,13 @@ let heartbeatTimer = null;
 function register() {
   const msg = Buffer.from(`REGISTER ${RECEIVE_PORT} ${MY_NAME}`);
   socket.send(msg, 0, msg.length, RELAY_PORT, RELAY_IP, (err) => {
-    if (err) console.error('❌ Error sending REGISTER:', err);
-    else console.log('📤 Sent REGISTER to relay, awaiting ACK...');
+    if (err) console.error('❌ REGISTER failed:', err);
+    else console.log('📤 Sent REGISTER to relay...');
   });
 
   setTimeout(() => {
     if (!hasRegistered) {
-      console.log('⏳ No ACK received, retrying registration...');
+      console.log('⏳ No ACK, retrying...');
       register();
     }
   }, 2000);
@@ -28,17 +28,25 @@ function register() {
 function startHeartbeat() {
   if (heartbeatTimer) clearInterval(heartbeatTimer);
   heartbeatTimer = setInterval(() => {
-    console.log('🔁 Refreshing registration...');
     hasRegistered = false;
     register();
-  }, 60 * 1000);
+  }, 2 * 60 * 1000);
 }
 
-socket.on('message', (msg, rinfo) => {
+function unregister() {
+  const msg = Buffer.from(`UNREGISTER ${MY_NAME}`);
+  socket.send(msg, 0, msg.length, RELAY_PORT, RELAY_IP, () => {
+    console.log('🚪 Sent UNREGISTER to relay. Exiting...');
+    socket.close();
+    process.exit(0);
+  });
+}
+
+socket.on('message', (msg) => {
   const text = msg.toString();
   if (text.startsWith('ACK')) {
     if (!hasRegistered) {
-      console.log(`✅ Registered with relay ${RELAY_IP}:${RELAY_PORT}`);
+      console.log('✅ Registered with relay');
       startHeartbeat();
     }
     hasRegistered = true;
@@ -48,6 +56,9 @@ socket.on('message', (msg, rinfo) => {
 });
 
 socket.bind(RECEIVE_PORT, () => {
-  console.log(`👂 Listening on ${RECEIVE_PORT} for messages`);
+  console.log(`👂 Listening on ${RECEIVE_PORT}`);
   register();
 });
+
+process.on('SIGINT', unregister);
+process.on('SIGTERM', unregister);
